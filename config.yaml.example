@@ -1,0 +1,45 @@
+aws:
+  region: us-west-2
+  vpcId: vpc-xxxxx
+  subnetIds:
+    - subnet-xxxxx
+    - subnet-yyyyy
+  securityGroupIds:
+    - sg-xxxxx
+  keyName: nrp-burst-key
+  iamInstanceProfile: nrp-burst-instance-profile
+  tags:
+    Project: NRP
+    ManagedBy: nrp-aws-kip
+    Environment: production
+  useSpotInstances: true
+  spotMaxPrice: "0.50"  # Optional: max price per hour for spot instances
+
+node:
+  name: nrp-aws-burst
+  operatingSystem: Linux
+  cpu: "1000"      # 1000 cores available for bursting
+  memory: "4000Gi" # 4TB available for bursting
+  pods: "500"      # Max 500 pods
+  labels:
+    type: burst
+    cloud: aws
+    nrp.org/burst-node: "true"
+  taints:
+    - key: nrp.org/burst
+      value: "true"
+      effect: NoSchedule
+
+limits:
+  maxPods: 500
+  maxInstances: 100
+  costLimit: "1000.00"  # Optional: max USD per month
+
+logging:
+  level: info  # debug, info, warn, error
+  format: json # json or text
+
+metrics:
+  enabled: true
+  port: 10255
+  path: /metrics

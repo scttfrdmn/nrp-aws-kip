@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nrp-aws-kip
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nrp-aws-kip
+  namespace: nrp-aws-kip
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nrp-aws-kip
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "list", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nrp-aws-kip
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nrp-aws-kip
+subjects:
+  - kind: ServiceAccount
+    name: nrp-aws-kip
+    namespace: nrp-aws-kip
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nrp-aws-kip-aws-credentials
+  namespace: nrp-aws-kip
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: "YOUR_ACCESS_KEY_ID"
+  AWS_SECRET_ACCESS_KEY: "YOUR_SECRET_ACCESS_KEY"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nrp-aws-kip-config
+  namespace: nrp-aws-kip
+data:
+  config.yaml: |
+    aws:
+      region: us-west-2
+      vpcId: vpc-xxxxx
+      subnetIds:
+        - subnet-xxxxx
+      securityGroupIds:
+        - sg-xxxxx
+      keyName: nrp-burst-key
+      iamInstanceProfile: nrp-burst-instance-profile
+      tags:
+        Project: NRP
+        ManagedBy: nrp-aws-kip
+      useSpotInstances: true
+      spotMaxPrice: "0.50"
+
+    node:
+      name: nrp-aws-burst
+      operatingSystem: Linux
+      cpu: "1000"
+      memory: "4000Gi"
+      pods: "500"
+      labels:
+        type: burst
+        cloud: aws
+        nrp.org/burst-node: "true"
+      taints:
+        - key: nrp.org/burst
+          value: "true"
+          effect: NoSchedule
+
+    limits:
+      maxPods: 500
+      maxInstances: 100
+      costLimit: "1000.00"
+
+    logging:
+      level: info
+      format: json
+
+    metrics:
+      enabled: true
+      port: 10255
+      path: /metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nrp-aws-kip
+  namespace: nrp-aws-kip
+  labels:
+    app: nrp-aws-kip
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nrp-aws-kip
+  template:
+    metadata:
+      labels:
+        app: nrp-aws-kip
+    spec:
+      serviceAccountName: nrp-aws-kip
+      containers:
+        - name: nrp-aws-kip
+          image: nrp-aws-kip:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config=/etc/nrp-aws-kip/config.yaml
+            - --nodename=nrp-aws-burst
+            - --log-level=info
+          env:
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: nrp-aws-kip-config
+                  key: AWS_REGION
+                  optional: true
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: nrp-aws-kip-aws-credentials
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nrp-aws-kip-aws-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nrp-aws-kip
+              readOnly: true
+          ports:
+            - name: metrics
+              containerPort: 10255
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10255
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10255
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: config
+          configMap:
+            name: nrp-aws-kip-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nrp-aws-kip-metrics
+  namespace: nrp-aws-kip
+  labels:
+    app: nrp-aws-kip
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 10255
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app: nrp-aws-kip

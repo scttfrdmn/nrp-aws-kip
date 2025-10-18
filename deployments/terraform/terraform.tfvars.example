@@ -1,0 +1,44 @@
+# AWS Region
+aws_region = "us-west-2"
+
+# Project Name
+project_name = "nrp-aws-kip"
+
+# VPC Configuration
+create_vpc = true
+# If using existing VPC, set create_vpc = false and provide:
+# existing_vpc_id = "vpc-xxxxx"
+
+vpc_cidr = "10.100.0.0/16"
+
+# Availability Zones (adjust based on your region)
+availability_zones = [
+  "us-west-2a",
+  "us-west-2b",
+  "us-west-2c"
+]
+
+# NRP Network CIDR blocks (update with actual NRP network)
+nrp_cidr_blocks = [
+  "10.0.0.0/8"  # Example - replace with actual NRP CIDR
+]
+
+# SSH Key Pair
+create_key_pair = false
+# If creating key pair, provide your public key:
+# ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2E..."
+
+# VPN Gateway for NRP connectivity
+create_vpn_gateway = false  # Set to true if using VPN
+
+# CloudWatch Logs retention
+log_retention_days = 7
+
+# Common tags for all resources
+common_tags = {
+  Project     = "NRP-AWS-KIP"
+  Team        = "SDSU"
+  Environment = "production"
+  ManagedBy   = "Terraform"
+  Repository  = "github.com/scttfrdmn/nrp-aws-kip"
+}
