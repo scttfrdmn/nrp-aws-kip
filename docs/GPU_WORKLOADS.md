@@ -6,7 +6,7 @@ This guide covers everything you need to know about running GPU workloads on AWS
 
 ---
 
-## GPU Instance Types on AWS
+## GPU Instance Types on AWS (Updated October 2025)
 
 ### Instance Family Overview
 
@@ -14,9 +14,13 @@ This guide covers everything you need to know about running GPU workloads on AWS
 |--------|----------|------------|----------|-------------|------|
 | **g4dn** | NVIDIA T4 | 16 GB | ML inference, light training, graphics | Good | $ |
 | **g5** | NVIDIA A10G | 24 GB | ML training/inference, graphics | Better | $$ |
-| **p3** | NVIDIA V100 | 16-32 GB | ML training, HPC | Great | $$$ |
+| **g6** | NVIDIA L4 | 24 GB | Inference, graphics, spatial computing | Better | $$ |
+| **g6e** | NVIDIA L40S | 48 GB | Generative AI, graphics, 2x G6 memory | Great | $$$ |
+| **p3** | NVIDIA V100 | 16-32 GB | ML training, HPC (older gen) | Great | $$$ |
 | **p4d** | NVIDIA A100 | 40 GB | Large-scale ML training | Excellent | $$$$ |
-| **p5** | NVIDIA H100 | 80 GB | Next-gen ML, largest models | Best | $$$$$ |
+| **p5** | NVIDIA H100 | 80 GB | Advanced ML, LLM training | Best | $$$$$ |
+| **p5en** | NVIDIA H200 | 141 GB | LLM training, massive memory | Superior | $$$$$+ |
+| **p6** | NVIDIA B200 | 192 GB | Next-gen Blackwell, 2x P5 perf | Ultimate | $$$$$$+ |
 
 ### Detailed Instance Specifications
 
@@ -64,14 +68,59 @@ This guide covers everything you need to know about running GPU workloads on AWS
 **Best For**: Large-scale distributed training, giant models
 **Spot Savings**: ~70%
 
-#### p5 - NVIDIA H100 (Next-Gen)
+#### p5 - NVIDIA H100 (Advanced ML)
+
+| Instance Type | GPUs | GPU Memory | vCPUs | RAM | Price/hr (On-Demand) | Price/hr (Spot ~) |
+|---------------|------|------------|-------|-----|---------------------|-------------------|
+| p5.48xlarge | 8 | 640 GB | 192 | 2048 GB | $54.00 | $16.20 |
+
+**Best For**: LLM training, advanced ML models
+**Spot Availability**: Moderate
+**Note**: 45% price reduction effective June 2025
+
+#### p5en - NVIDIA H200 (High-Memory)
+
+| Instance Type | GPUs | GPU Memory | vCPUs | RAM | Price/hr (On-Demand) | Price/hr (Spot ~) |
+|---------------|------|------------|-------|-----|---------------------|-------------------|
+| p5en.48xlarge | 8 | 1128 GB (141 GB each) | 192 | 2048 GB | $73.00 | $21.90 |
+
+**Best For**: LLMs requiring massive memory, RAG applications
+**Spot Availability**: Moderate
+**Note**: 26% price reduction effective June 2025
+
+#### p6 - NVIDIA B200 Blackwell (Next-Gen)
+
+| Instance Type | GPUs | GPU Memory | vCPUs | RAM | Price/hr (Est.) |
+|---------------|------|------------|-------|-----|----------------|
+| p6.48xlarge | 8 | 1536 GB (192 GB each) | 192 | 2048 GB | ~$80-100 |
+
+**Best For**: Next-generation LLM training, 2.5x performance vs H100
+**Spot Availability**: Limited (newly released May 2025)
+**Note**: Available via Capacity Blocks and Savings Plans
+
+#### g6 - NVIDIA L4 (Cost-Effective Inference)
 
 | Instance Type | GPUs | GPU Memory | vCPUs | RAM | Price/hr (On-Demand) |
 |---------------|------|------------|-------|-----|---------------------|
-| p5.48xlarge | 8 | 640 GB | 192 | 2048 GB | $98.32 |
+| g6.xlarge | 1 | 24 GB | 4 | 16 GB | ~$0.75 |
+| g6.2xlarge | 1 | 24 GB | 8 | 32 GB | ~$1.05 |
+| g6.4xlarge | 1 | 24 GB | 16 | 64 GB | ~$1.65 |
+| g6.12xlarge | 4 | 96 GB | 48 | 192 GB | ~$4.95 |
 
-**Best For**: Cutting-edge LLM training, largest AI models
-**Spot Availability**: Limited
+**Best For**: ML inference, graphics, spatial computing
+**Note**: 2x better performance than G4dn
+
+#### g6e - NVIDIA L40S (High-Memory Inference)
+
+| Instance Type | GPUs | GPU Memory | vCPUs | RAM | Price/hr (On-Demand) |
+|---------------|------|------------|-------|-----|---------------------|
+| g6e.xlarge | 1 | 48 GB | 4 | 32 GB | $1.86 |
+| g6e.2xlarge | 1 | 48 GB | 8 | 64 GB | $2.24 |
+| g6e.4xlarge | 1 | 48 GB | 16 | 128 GB | $3.01 |
+| g6e.12xlarge | 4 | 192 GB | 48 | 384 GB | $10.50 |
+
+**Best For**: Generative AI, large model inference, 2x memory vs G6
+**Spot Availability**: Good
 
 ---
 
