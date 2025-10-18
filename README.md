@@ -1,5 +1,9 @@
 # NRP-AWS-KIP: National Research Platform AWS Kubernetes Instance Provider
 
+[![CI](https://github.com/scttfrdmn/nrp-aws-kip/actions/workflows/ci.yml/badge.svg)](https://github.com/scttfrdmn/nrp-aws-kip/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/scttfrdmn/nrp-aws-kip)](go.mod)
+
 A cloud bursting solution that integrates AWS compute capacity with the National Research Platform's Kubernetes clusters using the Virtual Kubelet pattern.
 
 ## Overview
