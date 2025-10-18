@@ -1,0 +1,227 @@
+New chat
+Where does the virtual kublet Kip run? and where does the network pipe from it to the cloud live - on the same node?
+
+
+Deciphering Kip's architecture and network topology.
+
+
+
+
+
+I'll search for information about Kip's architecture to give you accurate details about where it runs and how the networking works.
+
+
+2 steps
+
+Kip virtual kubelet networking architecture itzo cell
+10 results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Excavated architectural specifics regarding virtual kubelet networking topology.
+
+Based on the information I found, here's how Kip's architecture works:
+
+Where Kip Runs
+The Kip virtual kubelet runs as a pod on your Kubernetes cluster and creates a virtual Kubernetes node in the cluster 
+GitHub - elotl/kip: Virtual-kubelet provider running pods in cloud instances
+. It's deployed as a StatefulSet in the cluster (typically in the kube-system namespace).
+
+Network Pipe Location
+Yes, the network connectivity components run on the same infrastructure but in different locations:
+
+On the Kip virtual kubelet side (in your cluster):
+
+The Kip pod runs on a node in the cluster and communicates with the Kubernetes API server 
+GitHub - elotl/kip: Virtual-kubelet provider running pods in cloud instances
+The Kip controller manages the lifecycle of cloud instances ("cells")
+On the cloud instance side (the "cells"):
+
+Each cell runs a lightweight agent called Itzo that performs the tasks of running pods on the cells 
+GitHub
+GitHub
+The cells also run kube-router as the network agent, acting as a Kubernetes service proxy and network policy agent 
+GitHub
+GitHub
+Network topology:
+
+Kip allocates two IP addresses for each cell: one for management communication between the provider and the agent running on the instance, and one for the pod 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+Both IP addresses come from the VPC address space 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+When deployed on cloud Kubernetes services like EKS, AKS, or GKE, both the cluster pods and Kip cells share the same networking space provided by the cloud provider 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+So the "network pipe" exists between the Kip controller pod (running in your cluster) and the Itzo agent (running on each cell in the cloud), with both endpoints using IP addresses from the same VPC network space.
+
+What if my K8s is running on premises and I want to use KIP to "burst" to the cloud - in this case AWS
+
+
+Excavated relevant documentation on hybrid Kubernetes bursting infrastructure.
+
+
+Great question! For on-premises Kubernetes bursting to AWS, you need additional networking infrastructure since your cluster and the AWS cells won't automatically share the same network space.
+
+Network Architecture for On-Prem to Cloud
+To enable networking between pods on an on-premises cluster and pods deployed as cells by Kip, you need traditional VPN connectivity to the cloud provider's network (AWS VPC) 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+.
+
+The setup involves:
+
+A traditional site-to-site VPN topology between your customer network (private/internal network) and the AWS VPC, involving a customer gateway and a virtual private gateway 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+.
+
+Deployment components:
+
+Kip and a VPN client (such as Strongswan) are deployed in your local Kubernetes cluster, while a VPN Gateway is deployed on AWS and associated with the VPC configured for the Kip cells 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+.
+
+This VPN connection links the local cluster to the VPC, allowing pods and services to reach each other between the two sides 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+.
+
+CNI Considerations
+Any supported CNI can be used for on-premises deployments, and it's recommended to use a native CNI plugin that integrates with the cloud provider on public clouds where virtual-kubelet pods and regular pods will get their IP addresses from the same network address space 
+Cloud Bursting with Virtual Kubelet and KIP (Kloud Instance Provider)
+.
+
+So in summary: the Kip virtual kubelet runs in your on-prem cluster, but you need a site-to-site VPN between your datacenter and AWS VPC to provide the network connectivity for the cells to communicate back to your cluster and for your on-prem pods to reach the cloud-bursted pods.
+
+I would like to use Wiregaurd for the tunnel
+
+
+1 step
+
+Kip virtual kubelet WireGuard VPN AWS
+10 results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Validated WireGuard compatibility and architected alternative tunnel solution.
+
+
+Excellent choice! WireGuard is a great alternative to Strongswan - it's lightweight, modern, and performs well. While the Kip documentation specifically mentions Strongswan as an example, WireGuard will work perfectly for the site-to-site VPN.
+
+WireGuard Architecture for Kip Cloud Bursting
+Based on the architecture and how AWS supports WireGuard for similar use cases:
+
+On-Premises Side:
+
+Deploy a WireGuard pod in your Kubernetes cluster (similar to how Strongswan would be deployed)
+Configure it to establish a tunnel to AWS VPC
+AWS Side:
+
+AWS can run a dedicated EC2 instance with WireGuard which serves as a VPN gateway, creating a secure tunnel between AWS and the edge infrastructure in a hub-and-spoke topology 
+AWS uses Raspberry Pi for EKS at the edge | Electronics Weekly
+This WireGuard gateway instance should be in the same VPC where Kip will create cells
+Network Flow:
+
+On-prem pods → WireGuard pod in your cluster → WireGuard gateway in AWS VPC → Kip cells
+The WireGuard tunnel extends your on-prem network into the AWS VPC address space
+Kip cells get IP addresses from the VPC and can communicate back through the tunnel
+Implementation Approach
+You can run a WireGuard server as "just another pod" inside a Kubernetes cluster using the LinuxServer.io Docker image with all installation details prepared to configure and deploy a WireGuard pod 
+Christian Seifert // Setting up a WireGuard VPN using Kubernetes
+.
+
+The key configuration needs:
+
+IP routing: WireGuard needs to route traffic between your on-prem cluster network and the AWS VPC CIDR
+AllowedIPs: Configure to include both your cluster pod CIDR and the AWS VPC CIDR
+PostUp/PostDown rules: Set up NAT/forwarding as needed
+Security groups: Open the WireGuard UDP port (typically 51820) on your AWS WireGuard gateway instance
+This gives you a more modern, performant VPN solution compared to traditional IPsec-based VPNs!
+
+So I need to run two pods locally, KIP and the Wireguard endpoint
+
+
+Clarified component roles and deployment architecture considerations.
+
+
+
+
+
+
+
+
+Yes, exactly! For the on-premises side, you need both:
+
+On-Premises Components
+1. Kip Virtual Kubelet Pod
+
+Runs as a pod (StatefulSet) in your cluster 
+GitHub - elotl/kip: Virtual-kubelet provider running pods in cloud instances
+Creates the virtual node in your cluster
+Manages the lifecycle of cloud instances (cells) in AWS
+Communicates with the Kip cells via the network tunnel
+2. WireGuard VPN Pod
+
+Establishes the site-to-site VPN tunnel to AWS
+Routes traffic between your on-prem cluster and the AWS VPC
+Can be deployed as a pod using the LinuxServer.io image or similar
+AWS Side Components
+3. WireGuard Gateway (EC2 instance)
+
+Terminates the VPN tunnel from your on-prem network
+Routes traffic into the VPC where cells will be created
+4. Kip Cells (managed automatically)
+
+Cloud instances created automatically by the Kip virtual kubelet
+Each runs the Itzo agent
+Gets IP addresses from the AWS VPC
+Alternative Deployment Note
+While running WireGuard as a pod in Kubernetes is convenient, you could also run the on-prem WireGuard endpoint as:
+
+A separate VM/server on your network
+A network gateway/router device
+However, deploying it as a pod in your cluster keeps everything in one place and makes it easier to manage using Kubernetes-native tools. The key requirement is just that the WireGuard tunnel connects your on-prem network (where Kip runs) to the AWS VPC (where cells will be created).
+
+Does this architecture make sense for your setup?
+
+
+
+
+
+
+
+

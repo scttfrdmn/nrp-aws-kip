@@ -1,133 +1,60 @@
-# NRP-AWS-KIP: National Research Platform AWS Kubernetes Instance Provider
+# nrp-aws-kip (Archived)
 
-[![CI](https://github.com/scttfrdmn/nrp-aws-kip/actions/workflows/ci.yml/badge.svg)](https://github.com/scttfrdmn/nrp-aws-kip/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/scttfrdmn/nrp-aws-kip)](go.mod)
+**⚠️ This project has been superseded by [ORCA](../orca/).**
 
-A cloud bursting solution that integrates AWS compute capacity with the National Research Platform's Kubernetes clusters using the Virtual Kubelet pattern.
+## What Happened?
 
-## Overview
+This directory contains initial research and planning for a Kubernetes cloud bursting solution. After extensive analysis (see `docs/` directory), the project was renamed and rebuilt from scratch as **ORCA** (Orchestration for Research Cloud Access).
 
-This project enables NRP Kubernetes clusters to dynamically burst workloads to AWS when on-premises capacity is exhausted. It implements a Virtual Kubelet provider that translates Kubernetes pod specifications into AWS EC2 instances.
+## Why the Change?
 
-## Architecture
+1. **Better name** - ORCA reflects the ocean theme of NRP's Nautilus platform
+2. **Fresh start** - Building from scratch with modern tools (K8s 1.31, AWS SDK v2, Go 1.21)
+3. **Clear identity** - Not a fork of Kip, but a new project learning from its lessons
+4. **Research focus** - Designed specifically for university/research computing workloads
 
-```
-┌─────────────────────────────────────────┐
-│  NRP Kubernetes Cluster                 │
-│  ┌─────────────────────────────────┐   │
-│  │  NRP-AWS-KIP Virtual Node       │   │
-│  │  (Virtual Kubelet)              │   │
-│  └──────────────┬──────────────────┘   │
-└─────────────────┼───────────────────────┘
-                  │
-                  │ VPN/Direct Connect
-                  │
-┌─────────────────▼───────────────────────┐
-│  AWS Account                            │
-│  ┌──────────────────────────────────┐  │
-│  │  VPC / Subnets                   │  │
-│  │  ┌────────┐ ┌────────┐ ┌──────┐ │  │
-│  │  │ EC2    │ │ EC2    │ │ EC2  │ │  │
-│  │  │ (Pod)  │ │ (Pod)  │ │ (Pod)│ │  │
-│  │  └────────┘ └────────┘ └──────┘ │  │
-│  └──────────────────────────────────┘  │
-└─────────────────────────────────────────┘
-```
+## What's Here?
 
-## Features
+This directory preserves the initial thinking and research:
 
-- **Dynamic Pod-to-EC2 Mapping**: Translates K8s pod specs to appropriate EC2 instance types
-- **Cost Optimization**: Support for Spot instances and automatic cleanup
-- **Network Integration**: Seamless connectivity between NRP and AWS
-- **Resource Management**: Respects pod resource requests/limits
-- **Monitoring**: Metrics and logging for burst usage
+- `docs/NAMING_AND_STRATEGY.md` - Name selection process (chose ORCA)
+- `docs/WHY_BUILD_CUSTOM.md` - Why build from scratch vs fork Kip
+- `docs/ALTERNATIVES_ANALYSIS.md` - Analysis of existing solutions
+- `docs/KIP_COMPARISON.md` - Detailed Kip comparison
+- `docs/GPU_WORKLOADS.md` - GPU instance research (October 2025 pricing)
+- `claude-chat.txt` - Original research conversation
 
-## Project Structure
+## Active Development
 
-```
-.
-├── cmd/
-│   └── nrp-aws-kip/          # Main application entry point
-├── pkg/
-│   ├── provider/             # Virtual Kubelet provider implementation
-│   ├── config/               # Configuration management
-│   └── controller/           # K8s controller logic
-├── internal/
-│   ├── aws/                  # AWS SDK integration
-│   └── metrics/              # Prometheus metrics
-├── deployments/
-│   ├── kubernetes/           # K8s manifests, Helm charts
-│   └── terraform/            # AWS infrastructure IaC
-├── docs/                     # Additional documentation
-└── scripts/                  # Build and deployment scripts
-```
+**All active development happens in**: [`../orca/`](../orca/)
 
-## Prerequisites
+See the [ORCA README](../orca/README.md) for:
+- Current architecture
+- Development setup
+- Contributing guidelines
+- Roadmap
 
-- Go 1.21+
-- Access to NRP Kubernetes cluster
-- AWS account with appropriate permissions
-- VPN or Direct Connect between NRP and AWS (recommended)
+## Historical Value
 
-## Quick Start
+This directory is kept for historical reference:
+- Documents decision-making process
+- Preserves research on alternatives
+- Shows evolution from concept to implementation
+- Useful for understanding "why ORCA"
 
-### 1. Configure AWS Credentials
+---
 
-```bash
-export AWS_REGION=us-west-2
-export AWS_ACCESS_KEY_ID=your_key
-export AWS_SECRET_ACCESS_KEY=your_secret
-```
+**Status**: 🔒 Archived (reference only)
+**Active Project**: ✅ [ORCA](../orca/)
+**Date Archived**: October 2025
 
-### 2. Deploy Infrastructure
+## Original Concept
 
-```bash
-cd deployments/terraform
-terraform init
-terraform apply
-```
+This was originally conceived as "nrp-aws-kip" (National Research Platform AWS Kubernetes Instance Provider), a Virtual Kubelet-based solution for cloud bursting. The core concept remains the same in ORCA, but with:
+- Better naming and branding
+- Modern implementation (2025 tools)
+- Research-first design philosophy
+- Explicit instance selection
+- Comprehensive testing framework
 
-### 3. Build and Deploy
-
-```bash
-make build
-kubectl apply -f deployments/kubernetes/
-```
-
-## Configuration
-
-See `config.yaml.example` for configuration options including:
-- AWS region and instance types
-- VPC/subnet configuration
-- Resource limits and quotas
-- Cost controls
-
-## Development
-
-Built by AWS and San Diego State University for the National Research Platform.
-
-### Building
-
-```bash
-make build
-```
-
-### Testing
-
-```bash
-make test
-```
-
-## License
-
-Apache 2.0 License - See LICENSE file
-
-## Contributing
-
-Contributions welcome! Please see CONTRIBUTING.md for guidelines.
-
-## Contact
-
-- AWS Team: [your contact]
-- SDSU Team: [sdsu contact]
+The research and planning done here directly informed ORCA's architecture.
